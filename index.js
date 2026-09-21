@@ -60,6 +60,9 @@ app.get("/callback", async (req,res) => {
    })
    // sending the data back to the client
   const data = await response.json()
+  if (!response.ok){
+    res.status(400).send(`${data.error}: ${data.eror_description}`)
+  }
   res.json(data)
 
 
