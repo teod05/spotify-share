@@ -1,4 +1,3 @@
-import { URLSearchParams } from "url"
 import crypto from "node:crypto"
 
 
@@ -63,20 +62,19 @@ app.get("/callback", async (req,res) => {
   if (!response.ok){
     res.status(400).send(`${data.error}: ${data.eror_description}`)
   }
-  res.json(data)
-
 
   await addToPlaylist(data.access_token)
+  res.send("Added!")
+
 })  
 
 
-// IMPLEMENT /CALLBACK
 app.listen(port, () => {
     console.log(`listening on port ${port}`)
 })
 
 async function addToPlaylist(accessToken) {
-    const url = "https://api.spotify.com/v1/playlists/63wGlhpFDoQ8GXdRsySsNN/items"
+    const url = "https://api.spotify.com/v1/playlists/3EssRQQTtRgom8M2ggURRr/items"
     
     try{
         const res = await fetch(url, {
@@ -95,7 +93,7 @@ async function addToPlaylist(accessToken) {
         }
 
         const result = await res.json()
-        console.log(result)
+
     } catch(error){
         console.error(error.message)
     }
