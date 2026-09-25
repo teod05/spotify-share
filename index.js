@@ -7,13 +7,15 @@ const client_secret = process.env.CLIENT_SECRET
 import express, { response } from "express";
 const port = 8888
 const app = express();
-let songId
+let accessToken
+
+//refresh token logic and helper to see if its valid
 
 app.use(express.json())
 
 app.post("/api/add", function(req, res) {
-    songId = req.body.link.substring(31,53)
-    
+    await addToPlaylist(req.body.link.substring(31,53))
+
 })
 
 app.get('/login', function(req, res) {
@@ -66,12 +68,10 @@ app.get("/callback", async (req,res) => {
    // sending the data back to the client
   const data = await response.json()
   if (!response.ok){
-    res.status(400).send(`${data.error}: ${data.eror_description}`)
+    res.status(400).send(`${data.error}: ${data.error_description}`)
   }
-
-  await addToPlaylist(data.access_token)
-  res.send("Added!")
-
+  accessToken = data.access_token
+  res.redirect("http://localhost:5173")
 })  
 
 
