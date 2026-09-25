@@ -1,26 +1,33 @@
-import { useState } from 'react'
 import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 
 function App() {
-  const [link, setLink] = useState("")
 
   function handleSubmit(e){
     e.preventDefault()
+    const form = e.target
+    // puts form data into formData object (js)
+    const formData = new FormData(form)
 
+    // we are using a proxy server to avoid CORS
+    fetch('/api/add', {
+      method: "POST",
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ link: formData.get("spotifyLink")})
+    } )
 
   }
 
   return (
     <>
-    <h1>Add songs to your spotify playlist!</h1>
     <form onSubmit={handleSubmit}>
-      <label htmlFor="spotifylink">Spotify Link To the Song:</label><br/>
-      <input type='text' id='spotifylink' onChange={(e) => setLink(e.target.value)}></input><br/>
-      <input type='submit' id='spotifylink'></input><br/>
+      <label>
+        Paste your link: <input name="spotifyLink" />
+      </label>
+      <br/>
+      <button type="submit">Submit form</button>
     </form>
-    <h2>{link}</h2>
     </>
   )
 }

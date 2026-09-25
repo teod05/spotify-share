@@ -7,8 +7,14 @@ const client_secret = process.env.CLIENT_SECRET
 import express, { response } from "express";
 const port = 8888
 const app = express();
+let songId
 
-console.log(client_id)
+app.use(express.json())
+
+app.post("/api/add", function(req, res) {
+    songId = req.body.link.substring(31,53)
+    
+})
 
 app.get('/login', function(req, res) {
 
