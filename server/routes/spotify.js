@@ -1,24 +1,13 @@
 import crypto from "node:crypto"
+import express from "express"
 
-
-const redirect_uri = 'http://127.0.0.1:8888/callback';
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
-import express, { response } from "express";
-const port = 8888
-const app = express();
-let accessToken
+const redirect_uri = 'http://127.0.0.1:8888/callback';
+// mini express app middleware to attach routes to and then plug them on your main Express app
+const router = express.Router()
 
-//refresh token logic and helper to see if its valid
-
-app.use(express.json())
-
-app.post("/api/add", function(req, res) {
-    await addToPlaylist(req.body.link.substring(31,53))
-
-})
-
-app.get('/login', function(req, res) {
+router.get('/login', function(req, res) {
 
   const state = crypto.randomUUID();
   const scope = 'user-read-private user-read-email playlist-modify-public playlist-modify-private';
@@ -35,7 +24,7 @@ app.get('/login', function(req, res) {
 });
 
 // the callback that spotify uses (we request the access token)
-app.get("/callback", async (req,res) => {
+router.get("/callback", async (req,res) => {
    const {code, state, error} = req.query
 
    if(error){
@@ -70,17 +59,21 @@ app.get("/callback", async (req,res) => {
   if (!response.ok){
     res.status(400).send(`${data.error}: ${data.error_description}`)
   }
-  accessToken = data.access_token
+
+  // logic here is only for one user. Since we dont have app defined here the only way
+  // we can access it is from req.app and we set a app.locals to store our acess token, 
+  // and since its the same app while the program runs the acess token lives
+  req.app.locals.accessToken = data.access_token
   res.redirect("http://localhost:5173")
 })  
 
-
-app.listen(port, () => {
-    console.log(`listening on port ${port}`)
+router.post("/api/add", async function(req, res) {
+    //calls addToplaylist passing the access token and manipulates the string link to get the id
+    await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
 })
 
-async function addToPlaylist(accessToken) {
-    const url = "https://api.spotify.com/v1/playlists/3EssRQQTtRgom8M2ggURRr/items"
+async function addToPlaylist(accessToken, spotifyId) {
+    const url = `https://api.spotify.com/v1/playlists/3EssRQQTtRgom8M2ggURRr/items`
     
     try{
         const res = await fetch(url, {
@@ -90,12 +83,12 @@ async function addToPlaylist(accessToken) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                uris : ["spotify:track:6bUNEbXT7HovLW6BgPCBsb"]
+                uris : [`spotify:track:${spotifyId}`]
             })
         })
         if(!res.ok){
-            const raw = await res.text()
             throw new Error(`${res.status}: ${raw}`)
+            const raw = await res.text()
         }
 
         const result = await res.json()
@@ -104,3 +97,5 @@ async function addToPlaylist(accessToken) {
         console.error(error.message)
     }
 }
+
+export default router
