@@ -11,7 +11,6 @@ app.use(express.json())
 app.use('/', spotifyRoutes)
 
 
-
 app.listen(port, () => {
     console.log(`listening on port ${port}`)
 })

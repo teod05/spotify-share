@@ -68,14 +68,25 @@ router.get("/callback", async (req,res) => {
 })  
 
 router.post("/api/add", async function(req, res) {
+
+    // check if the accessToken is here
+    if(!req.app.locals.accessToken){
+        return res.status(401).json({message : "Not logged in (Missing Access Token)"})
+    }
+
     //calls addToplaylist passing the access token and manipulates the string link to get the id
-    await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
+    try{
+        await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
+        res.status(200).json({ok : true})
+
+    } catch(err){
+        res.status(500).json({message: err.message || 'Internal Server Error'})
+    }
 })
 
 async function addToPlaylist(accessToken, spotifyId) {
     const url = `https://api.spotify.com/v1/playlists/3EssRQQTtRgom8M2ggURRr/items`
     
-    try{
         const res = await fetch(url, {
             method: "POST",
             headers: {
@@ -87,15 +98,12 @@ async function addToPlaylist(accessToken, spotifyId) {
             })
         })
         if(!res.ok){
-            throw new Error(`${res.status}: ${raw}`)
             const raw = await res.text()
+            throw new Error(`${res.status}: ${raw}`)
         }
 
         const result = await res.json()
 
-    } catch(error){
-        console.error(error.message)
-    }
 }
 
 export default router
