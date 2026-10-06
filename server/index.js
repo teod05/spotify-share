@@ -1,5 +1,6 @@
 import express, { response } from "express";
 import spotifyRoutes from './routes/spotify.js';
+import { supabase } from "./db.js";
 const port = 8888
 const app = express();
 
@@ -15,3 +16,6 @@ app.listen(port, () => {
     console.log(`listening on port ${port}`)
 })
 
+const { data: songs, eror } = await supabase.from("songs").select('*')
+
+console.log(songs)
