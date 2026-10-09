@@ -14,7 +14,7 @@ function App() {
     fetch('/api/add', {
       method: "POST",
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ link: formData.get("spotifyLink")})
+      body: JSON.stringify({ link: formData.get("spotifyLink"), description: formData.get("description")})
     } )
 
   }
@@ -24,6 +24,10 @@ function App() {
     <form onSubmit={handleSubmit}>
       <label>
         Paste your link: <input name="spotifyLink" />
+      </label>
+      <br/>
+      <label>
+        Why did you choose thing song? <input name="description" />
       </label>
       <br/>
       <button type="submit">Submit form</button>

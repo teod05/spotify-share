@@ -1,5 +1,6 @@
 import crypto from "node:crypto"
 import express from "express"
+import { supabase } from "../db.js";
 
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
@@ -76,8 +77,15 @@ router.post("/api/add", async function(req, res) {
 
     //calls addToplaylist passing the access token and manipulates the string link to get the id
     try{
-        await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
-        res.status(200).json({ok : true})
+        // call to supabase to add a song. (PROBLEM I NEED TO GET THE USER ID)
+        const { error } = await supabase
+        .from('songs')
+        .insert({song_link: req.body.link ,description: req.body.description, user_id: 5})
+
+
+        if (error) console.error(error)
+        // await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
+        // res.status(200).json({ok : true})
 
     } catch(err){
         res.status(500).json({message: err.message || 'Internal Server Error'})
