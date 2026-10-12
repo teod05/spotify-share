@@ -8,7 +8,7 @@ const redirect_uri = 'http://127.0.0.1:8888/callback';
 // mini express app middleware to attach routes to and then plug them on your main Express app
 const router = express.Router()
 
-router.get('/login', function(req, res) {
+router.get('/spotify-login', function(req, res) {
 
   const state = crypto.randomUUID();
   const scope = 'user-read-private user-read-email playlist-modify-public playlist-modify-private';
@@ -78,16 +78,17 @@ router.post("/api/add", async function(req, res) {
     //calls addToplaylist passing the access token and manipulates the string link to get the id
     try{
         // call to supabase to add a song. (PROBLEM I NEED TO GET THE USER ID)
-        const { error } = await supabase
+        await supabase
         .from('songs')
         .insert({song_link: req.body.link ,description: req.body.description, user_id: 5})
+        .throwOnError()
 
-
-        if (error) console.error(error)
+        // old logic to add to the playlist MOVE it later
         // await addToPlaylist(req.app.locals.accessToken, req.body.link.substring(31,53))
-        // res.status(200).json({ok : true})
+        res.status(200).json({ok : true})
 
     } catch(err){
+        console.log(err)
         res.status(500).json({message: err.message || 'Internal Server Error'})
     }
 })

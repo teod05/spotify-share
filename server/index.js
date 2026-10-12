@@ -1,5 +1,6 @@
 import express, { response } from "express";
 import spotifyRoutes from './routes/spotify.js';
+import authRoutes from './routes/auth.js'
 const port = 8888
 const app = express();
 
@@ -9,6 +10,7 @@ app.use(express.json())
 
 //figure out these
 app.use('/', spotifyRoutes)
+app.use('/api', authRoutes)
 
 
 app.listen(port, () => {
