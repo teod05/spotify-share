@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express, { response } from "express";
 import spotifyRoutes from './routes/spotify.js';
 import authRoutes from './routes/auth.js'
@@ -7,7 +8,7 @@ const app = express();
 
 //refresh token logic and helper to see if its valid
 app.use(express.json())
-
+app.use(cookieParser())
 //figure out these
 app.use('/', spotifyRoutes)
 app.use('/api', authRoutes)

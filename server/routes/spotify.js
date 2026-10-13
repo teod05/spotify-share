@@ -1,6 +1,7 @@
 import crypto from "node:crypto"
 import express from "express"
 import { supabase } from "../db.js";
+import { requireAuth } from "./auth.js";
 
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
@@ -68,7 +69,7 @@ router.get("/callback", async (req,res) => {
   res.redirect("http://localhost:5173")
 })  
 
-router.post("/api/add", async function(req, res) {
+router.post("/api/add", requireAuth, async function(req, res) {
 
     // check if the accessToken is here
     if(!req.app.locals.accessToken){
