@@ -8,6 +8,7 @@ import { getNextFridayDrop } from "../utils/time.js";
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
 const redirect_uri = process.env.REDIRECT_URI || 'http://127.0.0.1:8888/callback'
+const frontend_url = process.env.FRONTEND_URL || 'http://127.0.0.1:5173'
 
 const router = express.Router()
 
@@ -32,20 +33,30 @@ router.get('/spotify-login', requireAuth, function(req, res) {
     res.redirect('https://accounts.spotify.com/authorize?' + params)
 })
 
-router.get("/callback", requireAuth, async (req, res) => {
+router.get("/callback", async (req, res) => {
     const { code, state, error } = req.query
     const storedState = req.cookies.spotify_auth_state
+    const token = req.cookies.access_token
 
     if (error) {
-        return res.status(400).send(`Spotify authorization failed: ${error}`)
+        return res.redirect(`${frontend_url}/?spotify=error&reason=${encodeURIComponent(error)}`)
+    }
+
+    if (!token) {
+        return res.redirect(`${frontend_url}/?spotify=error&reason=not_authenticated`)
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+        return res.redirect(`${frontend_url}/?spotify=error&reason=invalid_session`)
     }
 
     if (!code) {
-        return res.status(400).send("Missing authorization code")
+        return res.redirect(`${frontend_url}/?spotify=error&reason=missing_code`)
     }
 
     if (state !== storedState) {
-        return res.status(400).send("State mismatch - possible CSRF attack")
+        return res.redirect(`${frontend_url}/?spotify=error&reason=state_mismatch`)
     }
 
     res.clearCookie('spotify_auth_state')
@@ -66,22 +77,22 @@ router.get("/callback", requireAuth, async (req, res) => {
 
         const data = await response.json()
         if (!response.ok) {
-            return res.status(400).send(`${data.error}: ${data.error_description}`)
+            return res.redirect(`${frontend_url}/?spotify=error&reason=${encodeURIComponent(data.error || 'token_exchange_failed')}`)
         }
 
         const { error: updateError } = await supabase
             .from('users')
             .update({ refresh_token: data.refresh_token })
-            .eq('auth_id', req.user.id)
+            .eq('auth_id', user.id)
 
         if (updateError) {
             throw updateError
         }
 
-        res.redirect("http://localhost:5173/settings")
+        res.redirect(`${frontend_url}/?spotify=connected`)
     } catch (err) {
         console.error('Callback error:', err)
-        return res.status(500).send("Failed to save Spotify credentials")
+        return res.redirect(`${frontend_url}/?spotify=error&reason=save_failed`)
     }
 })
 
