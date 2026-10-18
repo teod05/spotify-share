@@ -1,0 +1,152 @@
+.history-container {
+  padding: 2rem 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.history-container h1 {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: #b3b3b3;
+  font-size: 0.875rem;
+  margin: 0 0 2rem 0;
+  font-weight: 600;
+}
+
+.empty-message {
+  color: #b3b3b3;
+  font-size: 1rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.history-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.date-header {
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #282828;
+}
+
+.history-item {
+  display: flex;
+  gap: 1rem;
+  background: #282828;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.history-item:hover {
+  background: #333333;
+}
+
+.history-thumbnail,
+.history-thumbnail-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.history-thumbnail-placeholder {
+  background: #121212;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #535353;
+}
+
+.history-thumbnail-placeholder svg {
+  width: 32px;
+  height: 32px;
+}
+
+.history-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.history-user {
+  color: #b3b3b3;
+  font-weight: 600;
+}
+
+.history-dot {
+  color: #535353;
+}
+
+.history-link {
+  color: #1ed760;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.history-link:hover {
+  color: #1fdf64;
+}
+
+.history-description {
+  color: #b3b3b3;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .history-container {
+    padding: 1.5rem 1rem 5rem;
+  }
+  
+  .history-container h1 {
+    font-size: 1.75rem;
+  }
+  
+  .history-item {
+    flex-direction: column;
+  }
+  
+  .history-thumbnail,
+  .history-thumbnail-placeholder {
+    width: 100%;
+    height: 200px;
+  }
+}

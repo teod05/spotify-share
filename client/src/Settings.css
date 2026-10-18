@@ -1,0 +1,121 @@
+.settings-container {
+  padding: 2rem 1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.settings-container h1 {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  letter-spacing: -0.02em;
+}
+
+.settings-section {
+  margin-bottom: 2.5rem;
+}
+
+.settings-section h2 {
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.setting-item {
+  background: #282828;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  color: #b3b3b3;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.setting-value {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.status-connected {
+  color: #1ed760;
+}
+
+.status-disconnected {
+  color: #878787;
+}
+
+.setting-description {
+  color: #878787;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0.5rem 0 0 0;
+}
+
+.connect-spotify-button {
+  background: #1ed760;
+  color: #000000;
+  padding: 0.75rem 1.5rem;
+  border-radius: 500px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.connect-spotify-button:hover {
+  background: #1fdf64;
+  transform: scale(1.04);
+}
+
+.signout-button {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid #535353;
+  padding: 0.875rem 2rem;
+  border-radius: 500px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.signout-button:hover {
+  border-color: #ffffff;
+  transform: scale(1.04);
+}
+
+@media (max-width: 767px) {
+  .settings-container {
+    padding: 1.5rem 1rem 5rem;
+  }
+  
+  .settings-container h1 {
+    font-size: 1.75rem;
+  }
+  
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .connect-spotify-button {
+    width: 100%;
+    text-align: center;
+  }
+}
