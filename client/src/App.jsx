@@ -4,7 +4,7 @@ import { useState } from "react"
 function App() {
 
   const [user, setUser] = useState(null)
-  if (!user) return <Login/>
+  if (!user) return <Login onLogin={() => setUser(true)}/>
 
   function handleSubmit(e){
     e.preventDefault()
