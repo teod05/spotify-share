@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Login.css';
 
 function Login({ onLogin }) {
@@ -6,6 +6,41 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/me', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          onLogin(userData);
+        }
+      } catch {
+        // No session, stay on login page
+      } finally {
+        setCheckingSession(false);
+      }
+    }
+    
+    checkSession();
+  }, [onLogin]);
+
+  if (checkingSession) {
+    return (
+      <div className="login-container">
+        <div className="login-content">
+          <svg className="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <h1 className="login-title">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,7 +58,14 @@ function Login({ onLogin }) {
       const data = await response.json();
 
       if (response.ok && data.ok) {
-        onLogin(data);
+        const userResponse = await fetch('/api/me', {
+          credentials: 'include'
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          onLogin(userData);
+        }
       } else {
         setError(data.message || 'Login failed. Please try again.');
       }

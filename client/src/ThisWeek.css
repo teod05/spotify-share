@@ -106,6 +106,7 @@
   margin-bottom: 1rem;
 }
 
+.album-art,
 .album-art-placeholder {
   width: 80px;
   height: 80px;
@@ -116,11 +117,24 @@
   justify-content: center;
   color: #535353;
   flex-shrink: 0;
+  object-fit: cover;
 }
 
 .album-art-placeholder svg {
   width: 40px;
   height: 40px;
+}
+
+.spotify-link {
+  color: #1ed760;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.spotify-link:hover {
+  color: #1fdf64;
 }
 
 .track-details {
@@ -233,6 +247,125 @@
   margin-bottom: 1.5rem;
 }
 
+.pick-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.pick-form-modal {
+  background: #282828;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pick-form-modal h2 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+}
+
+.pick-form-modal .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.pick-form-modal label {
+  display: block;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pick-form-modal input,
+.pick-form-modal textarea {
+  width: 100%;
+  background: #121212;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  padding: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.pick-form-modal input:focus,
+.pick-form-modal textarea:focus {
+  outline: none;
+  border-color: #1ed760;
+}
+
+.pick-form-modal textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.char-count {
+  text-align: right;
+  color: #878787;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-button,
+.save-button {
+  flex: 1;
+  padding: 0.875rem;
+  border-radius: 500px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background: transparent;
+  border: 1px solid #535353;
+  color: #ffffff;
+}
+
+.cancel-button:hover:not(:disabled) {
+  border-color: #ffffff;
+}
+
+.save-button {
+  background: #1ed760;
+  color: #000000;
+  border: none;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #1fdf64;
+  transform: scale(1.02);
+}
+
+.cancel-button:disabled,
+.save-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 767px) {
   .thisweek-container {
     padding: 1.5rem 1rem 5rem;
@@ -240,5 +373,9 @@
   
   .thisweek-header h1 {
     font-size: 1.75rem;
+  }
+  
+  .pick-form-modal {
+    padding: 1.5rem;
   }
 }

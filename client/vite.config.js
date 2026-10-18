@@ -6,7 +6,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://127.0.0.1:8888'
+      '/api': {
+        target: 'http://127.0.0.1:8888',
+        changeOrigin: true
+      },
+      '/spotify-login': {
+        target: 'http://127.0.0.1:8888',
+        changeOrigin: true
+      },
+      '/callback': {
+        target: 'http://127.0.0.1:8888',
+        changeOrigin: true
+      }
     }
   }
 })

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import ThisWeek from './ThisWeek';
+import History from './History';
+import Settings from './Settings';
 import './Layout.css';
 
-function Layout({ onLogout }) {
+function Layout({ user, onLogout }) {
   const [currentView, setCurrentView] = useState('thisweek');
 
   function renderView() {
@@ -10,22 +12,9 @@ function Layout({ onLogout }) {
       case 'thisweek':
         return <ThisWeek />;
       case 'history':
-        return (
-          <div className="placeholder-view">
-            <h1>History</h1>
-            <p>Your past weekly picks will appear here.</p>
-          </div>
-        );
+        return <History />;
       case 'settings':
-        return (
-          <div className="placeholder-view">
-            <h1>Settings</h1>
-            <p>Manage your account and preferences.</p>
-            <button className="signout-button" onClick={onLogout}>
-              Sign out
-            </button>
-          </div>
-        );
+        return <Settings user={user} onLogout={onLogout} />;
       default:
         return <ThisWeek />;
     }

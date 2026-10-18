@@ -1,37 +1,40 @@
 import { useState, useEffect } from 'react';
-import { mockPicks } from './mockData';
 import './ThisWeek.css';
 
 function ThisWeek() {
-  const [picks] = useState(mockPicks);
+  const [weekData, setWeekData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState('');
+  const [showPickForm, setShowPickForm] = useState(false);
+  const [pickForm, setPickForm] = useState({ song_link: '', description: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    function getNextFridayDrop() {
-      const now = new Date();
-      const berlinTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' });
-      const berlin = new Date(berlinTimeStr);
-      const day = berlin.getDay();
-      
-      let daysUntilFriday = (5 - day + 7) % 7;
-      
-      const nextFriday = new Date(berlin);
-      nextFriday.setDate(berlin.getDate() + daysUntilFriday);
-      nextFriday.setHours(18, 0, 0, 0);
-      
-      if (daysUntilFriday === 0 && berlin.getHours() >= 18) {
-        nextFriday.setDate(nextFriday.getDate() + 7);
+    fetchWeekData();
+  }, []);
+
+  async function fetchWeekData() {
+    try {
+      const response = await fetch('/api/week', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setWeekData(data);
       }
-      
-      return nextFriday;
+    } catch {
+      // Silently fail
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (!weekData?.dropAt) return;
 
     function updateCountdown() {
       const now = new Date();
-      const berlinTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' });
-      const berlin = new Date(berlinTimeStr);
-      const nextFriday = getNextFridayDrop();
-      const diff = nextFriday - berlin;
+      const drop = new Date(weekData.dropAt);
+      const diff = drop - now;
       
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -48,27 +51,16 @@ function ThisWeek() {
     updateCountdown();
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [weekData]);
 
   function getWeekInfo() {
-    const now = new Date();
-    const berlinTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Berlin' });
-    const berlin = new Date(berlinTimeStr);
-    const day = berlin.getDay();
+    if (!weekData?.dropAt) return '';
     
-    let daysUntilFriday = (5 - day + 7) % 7;
-    const nextFriday = new Date(berlin);
-    nextFriday.setDate(berlin.getDate() + daysUntilFriday);
-    nextFriday.setHours(18, 0, 0, 0);
-    
-    if (daysUntilFriday === 0 && berlin.getHours() >= 18) {
-      nextFriday.setDate(nextFriday.getDate() + 7);
-    }
-    
-    const monday = new Date(nextFriday);
-    const mondayDay = nextFriday.getDay();
+    const dropDate = new Date(weekData.dropAt);
+    const monday = new Date(dropDate);
+    const mondayDay = dropDate.getDay();
     const daysFromMonday = mondayDay === 0 ? 6 : mondayDay - 1;
-    monday.setDate(nextFriday.getDate() - daysFromMonday);
+    monday.setDate(dropDate.getDate() - daysFromMonday);
     
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
@@ -84,11 +76,6 @@ function ThisWeek() {
     
     const weekNumber = getISOWeek(monday);
     
-    const formatDate = (date) => {
-      const month = date.toLocaleDateString('en-US', { month: 'short' });
-      return `${month} ${date.getDate()}`;
-    };
-    
     const formatRange = () => {
       const mondayMonth = monday.getMonth();
       const sundayMonth = sunday.getMonth();
@@ -96,7 +83,7 @@ function ThisWeek() {
       if (mondayMonth === sundayMonth) {
         return `${monday.toLocaleDateString('en-US', { month: 'short' })} ${monday.getDate()}–${sunday.getDate()}`;
       } else {
-        return `${formatDate(monday)}–${formatDate(sunday)}`;
+        return `${monday.toLocaleDateString('en-US', { month: 'short' })} ${monday.getDate()}–${sunday.toLocaleDateString('en-US', { month: 'short' })} ${sunday.getDate()}`;
       }
     };
     
@@ -104,9 +91,55 @@ function ThisWeek() {
   }
 
   function formatTimestamp(date) {
-    const day = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-    const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const d = new Date(date);
+    const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     return `ADDED ${day} ${time}`;
+  }
+
+  function handleEditPick() {
+    if (weekData?.you) {
+      setPickForm({
+        song_link: weekData.you.song_link,
+        description: weekData.you.description
+      });
+    }
+    setShowPickForm(true);
+  }
+
+  async function handleSavePick(e) {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/picks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(pickForm)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowPickForm(false);
+        setPickForm({ song_link: '', description: '' });
+        fetchWeekData();
+      } else {
+        setError(data.message || 'Failed to save pick');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const picksIn = (weekData?.you ? 1 : 0) + (weekData?.them?.submitted ? 1 : 0);
+
+  if (loading) {
+    return <div className="thisweek-container">Loading...</div>;
   }
 
   return (
@@ -116,45 +149,95 @@ function ThisWeek() {
         <p className="week-info">{getWeekInfo()}</p>
         <div className="status-line">
           <span className="drops-info">Drops Friday 18:00 · {countdown}</span>
-          <span className="progress-pill">2 of 2 picks in</span>
+          <span className="progress-pill">{picksIn} of 2 picks in</span>
         </div>
       </div>
+
+      {showPickForm && (
+        <div className="pick-form-overlay" onClick={() => setShowPickForm(false)}>
+          <div className="pick-form-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>{weekData?.you ? 'Edit your pick' : 'Add your pick'}</h2>
+            <form onSubmit={handleSavePick}>
+              <div className="form-group">
+                <label htmlFor="song_link">Spotify track link</label>
+                <input
+                  id="song_link"
+                  type="text"
+                  value={pickForm.song_link}
+                  onChange={(e) => setPickForm({ ...pickForm, song_link: e.target.value })}
+                  placeholder="https://open.spotify.com/track/..."
+                  required
+                  disabled={saving}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="description">Why this one?</label>
+                <textarea
+                  id="description"
+                  value={pickForm.description}
+                  onChange={(e) => setPickForm({ ...pickForm, description: e.target.value })}
+                  placeholder="What made you pick this song?"
+                  required
+                  maxLength={280}
+                  rows={4}
+                  disabled={saving}
+                />
+                <div className="char-count">{pickForm.description.length}/280</div>
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              <div className="form-actions">
+                <button type="button" onClick={() => setShowPickForm(false)} disabled={saving} className="cancel-button">
+                  Cancel
+                </button>
+                <button type="submit" disabled={saving} className="save-button">
+                  {saving ? 'Saving...' : 'Save pick'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="picks-grid">
         <div className="pick-card">
           <div className="card-header">
             <h2>Your pick</h2>
-            {picks.yourPick && (
-              <button className="edit-button" onClick={() => console.log('Edit clicked')}>
+            {weekData?.you && (
+              <button className="edit-button" onClick={handleEditPick}>
                 Edit
               </button>
             )}
           </div>
           
-          {picks.yourPick ? (
+          {weekData?.you ? (
             <div className="pick-content">
               <div className="track-info">
-                <div className="album-art-placeholder">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                  </svg>
-                </div>
+                {weekData.you.thumbnail_url ? (
+                  <img src={weekData.you.thumbnail_url} alt={weekData.you.title} className="album-art" />
+                ) : (
+                  <div className="album-art-placeholder">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    </svg>
+                  </div>
+                )}
                 <div className="track-details">
-                  <div className="track-title">{picks.yourPick.trackTitle}</div>
-                  <div className="track-artist">{picks.yourPick.artist}</div>
-                  <div className="track-album">{picks.yourPick.album}</div>
+                  <div className="track-title">{weekData.you.title}</div>
+                  <a href={weekData.you.song_link} target="_blank" rel="noopener noreferrer" className="spotify-link">
+                    Open in Spotify →
+                  </a>
                 </div>
               </div>
-              <div className="timestamp">{formatTimestamp(picks.yourPick.addedAt)}</div>
+              <div className="timestamp">{formatTimestamp(weekData.you.created_at)}</div>
               <div className="note">
                 <div className="note-label">Why this song?</div>
-                <p>{picks.yourPick.note}</p>
+                <p>{weekData.you.description}</p>
               </div>
             </div>
           ) : (
             <div className="empty-state">
               <p>You haven't picked a song yet</p>
-              <button className="add-button" onClick={() => console.log('Add pick clicked')}>
+              <button className="add-button" onClick={() => setShowPickForm(true)}>
                 Add your pick
               </button>
             </div>
@@ -163,10 +246,10 @@ function ThisWeek() {
 
         <div className="pick-card">
           <div className="card-header">
-            <h2>Her pick</h2>
+            <h2>Their pick</h2>
           </div>
           
-          {picks.herPick.hasSubmitted ? (
+          {weekData?.them?.submitted ? (
             <div className="pick-content locked">
               <div className="lock-icon">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -175,9 +258,11 @@ function ThisWeek() {
               </div>
               <div className="locked-title">Hidden until Friday</div>
               <div className="locked-subtitle">Unlocks at 18:00</div>
-              <div className="timestamp">
-                {picks.herPick.submittedAt && `SUBMITTED ${picks.herPick.submittedAt.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()} ${picks.herPick.submittedAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`}
-              </div>
+              {weekData.them.created_at && (
+                <div className="timestamp">
+                  {`SUBMITTED ${new Date(weekData.them.created_at).toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()} ${new Date(weekData.them.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`}
+                </div>
+              )}
             </div>
           ) : (
             <div className="empty-state">
