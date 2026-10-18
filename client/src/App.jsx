@@ -1,8 +1,10 @@
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import Login from "./Login"
+import { useState } from "react"
 
 function App() {
+
+  const [user, setUser] = useState(null)
+  if (!user) return <Login/>
 
   function handleSubmit(e){
     e.preventDefault()
@@ -27,7 +29,7 @@ function App() {
       </label>
       <br/>
       <label>
-        Why did you choose thing song? <input name="description" />
+        Why did you choose this song? <input name="description" />
       </label>
       <br/>
       <button type="submit">Submit form</button>
