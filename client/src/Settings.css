@@ -8,8 +8,28 @@
   color: #ffffff;
   font-size: 2rem;
   font-weight: 700;
-  margin: 0 0 2rem 0;
+  margin: 0 0 1rem 0;
   letter-spacing: -0.02em;
+}
+
+.spotify-message {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.spotify-message.success {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1ed760;
+  border: 1px solid rgba(29, 185, 84, 0.3);
+}
+
+.spotify-message.error {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
 .settings-section {

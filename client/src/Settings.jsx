@@ -1,6 +1,6 @@
 import './Settings.css';
 
-function Settings({ user, onLogout }) {
+function Settings({ user, onLogout, spotifyMessage }) {
   async function handleLogout() {
     try {
       await fetch('/api/logout', {
@@ -17,6 +17,12 @@ function Settings({ user, onLogout }) {
   return (
     <div className="settings-container">
       <h1>Settings</h1>
+      
+      {spotifyMessage && (
+        <div className={`spotify-message ${spotifyMessage.type}`}>
+          {spotifyMessage.text}
+        </div>
+      )}
 
       <div className="settings-section">
         <h2>Spotify Connection</h2>

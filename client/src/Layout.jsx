@@ -1,11 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ThisWeek from './ThisWeek';
 import History from './History';
 import Settings from './Settings';
 import './Layout.css';
 
 function Layout({ user, onLogout }) {
-  const [currentView, setCurrentView] = useState('thisweek');
+  const params = new URLSearchParams(window.location.search);
+  const spotifyStatus = params.get('spotify');
+  
+  const [currentView, setCurrentView] = useState(spotifyStatus ? 'settings' : 'thisweek');
+  const [spotifyMessage, setSpotifyMessage] = useState(null);
+  const [updatedUser, setUpdatedUser] = useState(user);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('spotify');
+    
+    if (!status) return;
+    
+    // This is intentional: we set state once based on query param, then clean up
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (status === 'connected') {
+      setSpotifyMessage({ type: 'success', text: 'Spotify connected successfully!' });
+      
+      fetch('/api/me', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => setUpdatedUser(data))
+        .catch(() => {});
+    } else if (status === 'error') {
+      const reason = urlParams.get('reason') || 'unknown';
+      setSpotifyMessage({ type: 'error', text: `Failed to connect Spotify: ${reason}` });
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+    
+    window.history.replaceState({}, '', window.location.pathname);
+    
+    const timer = setTimeout(() => setSpotifyMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   function renderView() {
     switch (currentView) {
@@ -14,7 +46,7 @@ function Layout({ user, onLogout }) {
       case 'history':
         return <History />;
       case 'settings':
-        return <Settings user={user} onLogout={onLogout} />;
+        return <Settings user={updatedUser} onLogout={onLogout} spotifyMessage={spotifyMessage} />;
       default:
         return <ThisWeek />;
     }
