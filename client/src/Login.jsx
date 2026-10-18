@@ -36,9 +36,12 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-container">
-      <div className="login-card">
-        <h1 className="login-title">🎵 Weekly Song Share</h1>
-        <p className="login-subtitle">Share your favorite track each week</p>
+      <div className="login-content">
+        <svg className="logo-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+        
+        <h1 className="login-title">Welcome back</h1>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
@@ -49,7 +52,6 @@ function Login({ onLogin }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
               required
               autoComplete="email"
               disabled={loading}
@@ -64,7 +66,6 @@ function Login({ onLogin }) {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
               required
               autoComplete="current-password"
               disabled={loading}
@@ -78,7 +79,7 @@ function Login({ onLogin }) {
           )}
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
       </div>
