@@ -2,6 +2,7 @@
   padding: 2rem 1rem;
   max-width: 900px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .thisweek-header {
@@ -63,6 +64,7 @@
   background: #282828;
   border-radius: 12px;
   padding: 1.5rem;
+  min-width: 0;
 }
 
 .card-header {
@@ -142,12 +144,16 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .track-title {
   font-size: 1.125rem;
   font-weight: 700;
   color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .track-artist {
@@ -173,6 +179,7 @@
   background: #121212;
   padding: 1rem;
   border-radius: 8px;
+  min-width: 0;
 }
 
 .note-label {
@@ -187,6 +194,8 @@
   font-size: 0.9375rem;
   line-height: 1.5;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .empty-state {
@@ -312,6 +321,8 @@
 .pick-form-modal textarea {
   resize: vertical;
   min-height: 100px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .char-count {

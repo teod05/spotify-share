@@ -2,6 +2,7 @@
   padding: 2rem 1rem;
   max-width: 900px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 .history-container h1 {
@@ -54,6 +55,7 @@
   padding: 1rem;
   border-radius: 8px;
   transition: background 0.2s ease;
+  min-width: 0;
 }
 
 .history-item:hover {
@@ -129,6 +131,8 @@
   font-size: 0.875rem;
   line-height: 1.5;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 @media (max-width: 767px) {
