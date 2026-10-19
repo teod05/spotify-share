@@ -29,6 +29,7 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
 .drops-info {
@@ -46,6 +47,26 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.playlist-button {
+  background: #1ed760;
+  color: #000000;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 500px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.playlist-button:hover {
+  background: #1fdf64;
+  transform: scale(1.04);
 }
 
 .picks-grid {
