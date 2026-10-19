@@ -75,7 +75,10 @@ function History() {
                   </div>
                 )}
                 <div className="history-details">
-                  <div className="history-title">{song.title}</div>
+                  <div className="history-title-row">
+                    <div className="history-title">{song.title}</div>
+                    {song.is_late && <span className="late-tag">LATE</span>}
+                  </div>
                   <div className="history-meta">
                     <span className="history-user">{song.user_name}</span>
                     <span className="history-dot">·</span>
