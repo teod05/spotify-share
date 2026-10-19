@@ -100,7 +100,7 @@ router.get("/api/week", requireAuth, async (req, res) => {
     try {
         const { data: currentUser, error: userError } = await supabase
             .from('users')
-            .select('id')
+            .select('id, playlist_id')
             .eq('auth_id', req.user.id)
             .single()
 
@@ -151,13 +151,31 @@ router.get("/api/week", requireAuth, async (req, res) => {
 
         const dropAt = getNextFridayDrop().toISOString()
 
+        let playlistId = process.env.SPOTIFY_PLAYLIST_ID
+
+        if (currentUser.playlist_id) {
+            const { data: playlist, error: playlistError } = await supabase
+                .from('playlist')
+                .select('playlist_link')
+                .eq('playlist_id', currentUser.playlist_id)
+                .maybeSingle()
+
+            if (!playlistError && playlist?.playlist_link) {
+                const match = playlist.playlist_link.match(/playlist\/([a-zA-Z0-9]+)/)
+                if (match) {
+                    playlistId = match[1]
+                }
+            }
+        }
+
         res.json({
             you: yourPickWithMetadata,
             them: {
                 submitted: !!theirPick,
                 created_at: theirPick?.created_at || null
             },
-            dropAt
+            dropAt,
+            playlistId
         })
     } catch (err) {
         console.error("Error fetching week data:", err)

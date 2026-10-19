@@ -151,6 +151,16 @@ function ThisWeek() {
           <span className="drops-info">Drops Friday 18:00 · {countdown}</span>
           <span className="progress-pill">{picksIn} of 2 picks in</span>
         </div>
+        {weekData?.playlistId && (
+          <a
+            href={`https://open.spotify.com/playlist/${weekData.playlistId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="playlist-button"
+          >
+            Go to playlist →
+          </a>
+        )}
       </div>
 
       {showPickForm && (
