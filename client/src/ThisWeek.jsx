@@ -147,6 +147,12 @@ function ThisWeek() {
       <div className="thisweek-header">
         <h1>This week's picks</h1>
         <p className="week-info">{getWeekInfo()}</p>
+        {weekData?.graceWindow?.active && weekData.graceWindow.canAddLatePick && !weekData.you && (
+          <div className="grace-notice">
+            <span className="grace-icon">⏰</span>
+            <span>Late pick window open until Sunday 23:59 for last week</span>
+          </div>
+        )}
         <div className="status-line">
           <span className="drops-info">Drops Friday 18:00 · {countdown}</span>
           <span className="progress-pill">{picksIn} of 2 picks in</span>

@@ -2,8 +2,8 @@ import crypto from "node:crypto"
 import express from "express"
 import { supabase } from "../db.js";
 import { requireAuth } from "./auth.js";
-import { parseSpotifyTrackLink, normalizeSpotifyTrackLink, getTrackMetadata } from "../utils/spotify.js";
-import { getNextFridayDrop } from "../utils/time.js";
+import { parseSpotifyTrackLink, normalizeSpotifyTrackLink, getTrackMetadata, addSongToPlaylist } from "../utils/spotify.js";
+import { getNextFridayDrop, getPreviousFridayDrop, isInGraceWindow } from "../utils/time.js";
 
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
@@ -150,6 +150,26 @@ router.get("/api/week", requireAuth, async (req, res) => {
         }
 
         const dropAt = getNextFridayDrop().toISOString()
+        const now = new Date()
+        const inGraceWindow = isInGraceWindow(now)
+        
+        let canAddLatePick = false
+        let previousWeekDrop = null
+
+        if (inGraceWindow) {
+            const prevDrop = getPreviousFridayDrop(now)
+            previousWeekDrop = prevDrop.toISOString()
+            
+            const { data: prevWeekPick } = await supabase
+                .from('songs')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .not('posted_at', 'is', null)
+                .gte('posted_at', prevDrop.toISOString())
+                .maybeSingle()
+
+            canAddLatePick = !prevWeekPick
+        }
 
         let playlistId = process.env.SPOTIFY_PLAYLIST_ID
 
@@ -175,7 +195,12 @@ router.get("/api/week", requireAuth, async (req, res) => {
                 created_at: theirPick?.created_at || null
             },
             dropAt,
-            playlistId
+            playlistId,
+            graceWindow: inGraceWindow ? {
+                active: true,
+                canAddLatePick,
+                previousWeekDrop
+            } : null
         })
     } catch (err) {
         console.error("Error fetching week data:", err)
@@ -231,21 +256,49 @@ router.post("/api/picks", requireAuth, async (req, res) => {
             if (updateError) {
                 throw updateError
             }
+            
+            res.status(200).json({ ok: true })
         } else {
-            const { error: insertError } = await supabase
+            const { data: newSong, error: insertError } = await supabase
                 .from('songs')
                 .insert({
                     song_link: normalizedLink,
                     description: description,
                     user_id: currentUser.id
                 })
+                .select('id, created_at')
+                .single()
 
             if (insertError) {
                 throw insertError
             }
-        }
 
-        res.status(200).json({ ok: true })
+            const now = new Date()
+            const isGrace = isInGraceWindow(now)
+            
+            if (isGrace) {
+                const prevDrop = getPreviousFridayDrop(now)
+                
+                const { data: prevWeekPick } = await supabase
+                    .from('songs')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .not('posted_at', 'is', null)
+                    .gte('posted_at', prevDrop.toISOString())
+                    .maybeSingle()
+
+                if (!prevWeekPick) {
+                    try {
+                        await addSongToPlaylist(newSong.id, normalizedLink, currentUser.id)
+                        console.log(`[Late Pick] Added song ${newSong.id} for user ${currentUser.id}`)
+                    } catch (error) {
+                        console.error(`[Late Pick] Failed to add song ${newSong.id}:`, error.message)
+                    }
+                }
+            }
+
+            res.status(200).json({ ok: true })
+        }
     } catch (err) {
         console.error("Error saving pick:", err)
         res.status(500).json({ message: err.message || 'Internal Server Error' })
@@ -261,6 +314,7 @@ router.get("/api/history", requireAuth, async (req, res) => {
                 song_link,
                 description,
                 posted_at,
+                created_at,
                 user_id,
                 users (
                     name
@@ -276,14 +330,23 @@ router.get("/api/history", requireAuth, async (req, res) => {
         const songsWithMetadata = await Promise.all(
             songs.map(async (song) => {
                 const metadata = await getTrackMetadata(song.song_link)
+                
+                const postedDate = new Date(song.posted_at)
+                const prevDrop = getPreviousFridayDrop(postedDate)
+                const createdDate = new Date(song.created_at)
+                
+                const isLate = createdDate > prevDrop
+                
                 return {
                     id: song.id,
                     song_link: song.song_link,
                     description: song.description,
                     posted_at: song.posted_at,
+                    created_at: song.created_at,
                     user_name: song.users?.name || 'Unknown',
                     title: metadata?.title || 'Unknown Track',
-                    thumbnail_url: metadata?.thumbnail_url || null
+                    thumbnail_url: metadata?.thumbnail_url || null,
+                    is_late: isLate
                 }
             })
         )
