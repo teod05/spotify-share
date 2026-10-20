@@ -1,19 +1,21 @@
 {
-  "name": "addsong",
+  "name": "spotify-share",
   "version": "1.0.0",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --env-file=.env server/index.js"
+    "build": "npm install && cd client && npm install && npm run build && cd ..",
+    "start": "node server/index.js",
+    "dev:server": "node --env-file=server/.env server/index.js",
+    "dev:client": "cd client && npm run dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Spotify song sharing app",
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
     "cookie-parser": "^1.4.7",
+    "date-fns-tz": "^3.2.0",
     "express": "^5.2.1",
     "morgan": "^1.12.1",
     "node-cron": "^3.0.3"
