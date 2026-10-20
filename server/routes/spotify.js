@@ -1,16 +1,27 @@
 import crypto from "node:crypto"
 import express from "express"
+import { toZonedTime } from "date-fns-tz"
 import { supabase } from "../db.js";
 import { requireAuth } from "./auth.js";
 import { parseSpotifyTrackLink, normalizeSpotifyTrackLink, getTrackMetadata, addSongToPlaylist } from "../utils/spotify.js";
 import { getNextFridayDrop, getPreviousFridayDrop, isInGraceWindow } from "../utils/time.js";
+import { runDrop } from "../jobs/friday-drop.js";
 
 const client_id = process.env.CLIENT_ID
 const client_secret = process.env.CLIENT_SECRET
 const redirect_uri = process.env.REDIRECT_URI || 'http://127.0.0.1:8888/callback'
-const frontend_url = process.env.FRONTEND_URL || 'http://127.0.0.1:5173'
+const drop_secret = process.env.DROP_SECRET
 
 const router = express.Router()
+
+function getFrontendUrl(req) {
+    if (process.env.FRONTEND_URL) {
+        return process.env.FRONTEND_URL
+    }
+    const protocol = req.get('x-forwarded-proto') || req.protocol
+    const host = req.get('host')
+    return `${protocol}://${host}`
+}
 
 router.get('/spotify-login', requireAuth, function(req, res) {
     const state = crypto.randomUUID()
@@ -37,26 +48,27 @@ router.get("/callback", async (req, res) => {
     const { code, state, error } = req.query
     const storedState = req.cookies.spotify_auth_state
     const token = req.cookies.access_token
+    const frontendUrl = getFrontendUrl(req)
 
     if (error) {
-        return res.redirect(`${frontend_url}/?spotify=error&reason=${encodeURIComponent(error)}`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=${encodeURIComponent(error)}`)
     }
 
     if (!token) {
-        return res.redirect(`${frontend_url}/?spotify=error&reason=not_authenticated`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=not_authenticated`)
     }
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) {
-        return res.redirect(`${frontend_url}/?spotify=error&reason=invalid_session`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=invalid_session`)
     }
 
     if (!code) {
-        return res.redirect(`${frontend_url}/?spotify=error&reason=missing_code`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=missing_code`)
     }
 
     if (state !== storedState) {
-        return res.redirect(`${frontend_url}/?spotify=error&reason=state_mismatch`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=state_mismatch`)
     }
 
     res.clearCookie('spotify_auth_state')
@@ -77,7 +89,7 @@ router.get("/callback", async (req, res) => {
 
         const data = await response.json()
         if (!response.ok) {
-            return res.redirect(`${frontend_url}/?spotify=error&reason=${encodeURIComponent(data.error || 'token_exchange_failed')}`)
+            return res.redirect(`${frontendUrl}/?spotify=error&reason=${encodeURIComponent(data.error || 'token_exchange_failed')}`)
         }
 
         const { error: updateError } = await supabase
@@ -89,10 +101,10 @@ router.get("/callback", async (req, res) => {
             throw updateError
         }
 
-        res.redirect(`${frontend_url}/?spotify=connected`)
+        res.redirect(`${frontendUrl}/?spotify=connected`)
     } catch (err) {
         console.error('Callback error:', err)
-        return res.redirect(`${frontend_url}/?spotify=error&reason=save_failed`)
+        return res.redirect(`${frontendUrl}/?spotify=error&reason=save_failed`)
     }
 })
 
@@ -355,6 +367,64 @@ router.get("/api/history", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("Error fetching history:", err)
         res.status(500).json({ message: err.message })
+    }
+})
+
+router.get("/api/health", (req, res) => {
+    res.json({ ok: true })
+})
+
+router.post("/api/drop", async (req, res) => {
+    const authHeader = req.headers.authorization
+    const forceRun = req.query.force === 'true'
+    
+    if (!drop_secret) {
+        return res.status(503).json({ 
+            error: 'DROP_SECRET not configured',
+            message: 'The drop endpoint is not available without DROP_SECRET' 
+        })
+    }
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or invalid authorization header' })
+    }
+    
+    const token = authHeader.substring(7)
+    if (token !== drop_secret) {
+        return res.status(403).json({ error: 'Invalid authorization token' })
+    }
+    
+    if (!forceRun) {
+        const now = new Date()
+        const berlin = toZonedTime(now, 'Europe/Berlin')
+        const day = berlin.getDay()
+        const hour = berlin.getHours()
+        
+        if (day !== 5 || hour !== 18) {
+            return res.json({
+                skipped: true,
+                reason: `Not Friday 18:00-18:59 Berlin time (currently ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day]} ${hour}:00 Berlin)`,
+                berlinTime: berlin.toISOString()
+            })
+        }
+    }
+    
+    try {
+        console.log('[Manual Drop] Starting drop via API...')
+        const result = await runDrop()
+        
+        res.json({
+            success: true,
+            message: 'Drop completed',
+            forced: forceRun,
+            ...result
+        })
+    } catch (err) {
+        console.error('[Manual Drop] Error:', err)
+        res.status(500).json({ 
+            success: false,
+            error: err.message 
+        })
     }
 })
 

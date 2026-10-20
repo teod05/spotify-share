@@ -23,10 +23,11 @@ export async function runDrop() {
 
         if (!pendingSongs || pendingSongs.length === 0) {
             console.log('[Friday Drop] No pending songs to add')
-            return
+            return { total: 0, added: 0, failed: 0 }
         }
 
         const successfullyAdded = []
+        const failed = []
 
         for (const song of pendingSongs) {
             try {
@@ -38,11 +39,20 @@ export async function runDrop() {
                 console.log(`[Friday Drop] Successfully added song ${song.id} by ${user.name}`)
             } catch (error) {
                 console.error(`[Friday Drop] Error processing song ${song.id}:`, error.message)
+                failed.push({ id: song.id, error: error.message })
             }
         }
 
-        console.log(`[Friday Drop] Completed: ${successfullyAdded.length} of ${pendingSongs.length} songs added successfully`)
+        const result = {
+            total: pendingSongs.length,
+            added: successfullyAdded.length,
+            failed: failed.length
+        }
+
+        console.log(`[Friday Drop] Completed: ${result.added} of ${result.total} songs added successfully`)
+        return result
     } catch (error) {
         console.error('[Friday Drop] Error:', error)
+        throw error
     }
 }
