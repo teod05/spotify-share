@@ -91,7 +91,9 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 
 ### 2. Create Drop Function
 
-This function makes an HTTP POST to your `/api/drop` endpoint:
+This function makes an HTTP POST to your `/api/drop` endpoint. The endpoint has a time guard that only runs the drop on Friday 18:00-18:59 Berlin time.
+
+**Important**: `pg_net` is fire-and-forget. It queues the request and returns immediately. Check `net._http_response` table for actual results.
 
 \`\`\`sql
 -- Create function to trigger drop
@@ -111,14 +113,15 @@ BEGIN
     FROM vault.decrypted_secrets 
     WHERE name = 'drop-secret';
 
-    -- Make POST request to drop endpoint
+    -- Make POST request with long timeout for Render cold start (30-60s)
     SELECT net.http_post(
         url := 'https://your-app.onrender.com/api/drop',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
             'Authorization', 'Bearer ' || drop_secret
         ),
-        body := '{}'::jsonb
+        body := '{}'::jsonb,
+        timeout_milliseconds := 120000
     ) INTO drop_response;
 
     RAISE NOTICE 'Drop triggered, response ID: %', drop_response;
@@ -142,15 +145,26 @@ BEGIN
             'Content-Type', 'application/json',
             'Authorization', 'Bearer your-drop-secret-here'
         ),
-        body := '{}'::jsonb
+        body := '{}'::jsonb,
+        timeout_milliseconds := 120000
     ) INTO drop_response;
 END;
 $$;
 \`\`\`
 
+**Check request results**:
+
+\`\`\`sql
+-- View recent HTTP responses from pg_net
+SELECT id, status_code, content::text, created 
+FROM net._http_response 
+ORDER BY created DESC 
+LIMIT 5;
+\`\`\`
+
 ### 3. Schedule Cron Jobs
 
-Berlin uses CEST (UTC+2) in summer and CET (UTC+1) in winter. We need **two schedules**:
+Berlin uses CEST (UTC+2) in summer and CET (UTC+1) in winter. We need **two schedules** that call the endpoint:
 
 \`\`\`sql
 -- Summer schedule (CEST = UTC+2): Fridays at 16:00 UTC = 18:00 Berlin
@@ -170,15 +184,15 @@ SELECT cron.schedule(
 );
 \`\`\`
 
-**Important**: This simplified approach runs both schedules year-round. One will fire at Berlin 17:00, the other at Berlin 18:00. The `/api/drop` endpoint is idempotent - if songs are already posted, it won't double-add them. Only the 18:00 Berlin run will find pending songs.
+**How it works**: Both schedules run year-round. In winter, 16:00 UTC = 17:00 Berlin and 17:00 UTC = 18:00 Berlin. The `/api/drop` endpoint has a **time guard** that only runs the drop when it's Friday 18:00-18:59 Berlin time. The 17:00 Berlin call gets `{skipped: true, reason: "Not Friday 18:00-18:59"}`. Only the 18:00 Berlin run actually drops songs.
 
-### 4. Keepalive Pings
+### 4. Wake-up Pings
 
-Render free tier sleeps after 15 minutes of inactivity. To ensure the service is awake when the drop runs, we ping it before:
+Render free tier sleeps after 15 minutes of inactivity and takes **30-60 seconds** to cold start. We wake it up before the drop:
 
 \`\`\`sql
--- Create ping function
-CREATE OR REPLACE FUNCTION ping_app()
+-- Create health check ping function
+CREATE OR REPLACE FUNCTION ping_health()
 RETURNS void
 LANGUAGE plpgsql
 AS $$
@@ -186,37 +200,28 @@ DECLARE
     ping_response bigint;
 BEGIN
     SELECT net.http_get(
-        url := 'https://your-app.onrender.com/'
+        url := 'https://your-app.onrender.com/api/health',
+        timeout_milliseconds := 120000
     ) INTO ping_response;
 END;
 $$;
 
--- Summer keepalive: Every 5 minutes from 17:30-18:00 UTC on Fridays (Mar-Oct)
+-- Wake-up ping at 15:55 UTC on Fridays (before 16:00 summer drop)
 SELECT cron.schedule(
-    'keepalive-summer',
-    '30-59/5 15 * 3-10 5',  -- Every 5 min from 15:30-15:59 UTC
-    $$SELECT ping_app()$$
+    'wakeup-summer',
+    '55 15 * 3-10 5',
+    $$SELECT ping_health()$$
 );
 
+-- Wake-up ping at 16:55 UTC on Fridays (before 17:00 winter drop)
 SELECT cron.schedule(
-    'keepalive-summer-2',
-    '0-30/5 16 * 3-10 5',  -- Every 5 min from 16:00-16:30 UTC  
-    $$SELECT ping_app()$$
-);
-
--- Winter keepalive: Every 5 minutes from 16:30-17:30 UTC on Fridays (Nov-Feb)
-SELECT cron.schedule(
-    'keepalive-winter',
-    '30-59/5 16 * 11-2 5',
-    $$SELECT ping_app()$$
-);
-
-SELECT cron.schedule(
-    'keepalive-winter-2',
-    '0-30/5 17 * 11-2 5',
-    $$SELECT ping_app()$$
+    'wakeup-winter',
+    '55 16 * 11-2 5',
+    $$SELECT ping_health()$$
 );
 \`\`\`
+
+**How it works**: The ping at 15:55 UTC wakes the service before the 16:00 UTC summer schedule. The ping at 16:55 UTC wakes it before the 17:00 UTC winter schedule. With a 60-second buffer, the service is warm when the drop request arrives.
 
 ### 5. Verify Cron Jobs
 
@@ -252,7 +257,9 @@ SELECT cron.schedule(
 
 ## Manual Drop Trigger
 
-To manually trigger a drop (for testing or emergency):
+The `/api/drop` endpoint has a time guard that only runs on Friday 18:00-18:59 Berlin time.
+
+**During drop window (Friday 18:00-18:59 Berlin)**:
 
 \`\`\`bash
 curl -X POST https://your-app.onrender.com/api/drop \\
@@ -270,6 +277,26 @@ Response:
   "failed": 0
 }
 \`\`\`
+
+**Outside drop window** (returns 200 but skips):
+
+\`\`\`json
+{
+  "skipped": true,
+  "reason": "Not Friday 18:00-18:59 Berlin time (currently Thu 15:00 Berlin)",
+  "berlinTime": "2024-10-24T15:00:00.000Z"
+}
+\`\`\`
+
+**Force run** (for testing, bypasses time guard):
+
+\`\`\`bash
+curl -X POST "https://your-app.onrender.com/api/drop?force=true" \\
+  -H "Authorization: Bearer your-drop-secret" \\
+  -H "Content-Type: application/json"
+\`\`\`
+
+Response includes `"forced": true`.
 
 ## Troubleshooting
 

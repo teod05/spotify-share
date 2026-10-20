@@ -1,5 +1,6 @@
 import crypto from "node:crypto"
 import express from "express"
+import { toZonedTime } from "date-fns-tz"
 import { supabase } from "../db.js";
 import { requireAuth } from "./auth.js";
 import { parseSpotifyTrackLink, normalizeSpotifyTrackLink, getTrackMetadata, addSongToPlaylist } from "../utils/spotify.js";
@@ -369,8 +370,13 @@ router.get("/api/history", requireAuth, async (req, res) => {
     }
 })
 
+router.get("/api/health", (req, res) => {
+    res.json({ ok: true })
+})
+
 router.post("/api/drop", async (req, res) => {
     const authHeader = req.headers.authorization
+    const forceRun = req.query.force === 'true'
     
     if (!drop_secret) {
         return res.status(503).json({ 
@@ -388,6 +394,21 @@ router.post("/api/drop", async (req, res) => {
         return res.status(403).json({ error: 'Invalid authorization token' })
     }
     
+    if (!forceRun) {
+        const now = new Date()
+        const berlin = toZonedTime(now, 'Europe/Berlin')
+        const day = berlin.getDay()
+        const hour = berlin.getHours()
+        
+        if (day !== 5 || hour !== 18) {
+            return res.json({
+                skipped: true,
+                reason: `Not Friday 18:00-18:59 Berlin time (currently ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][day]} ${hour}:00 Berlin)`,
+                berlinTime: berlin.toISOString()
+            })
+        }
+    }
+    
     try {
         console.log('[Manual Drop] Starting drop via API...')
         const result = await runDrop()
@@ -395,6 +416,7 @@ router.post("/api/drop", async (req, res) => {
         res.json({
             success: true,
             message: 'Drop completed',
+            forced: forceRun,
             ...result
         })
     } catch (err) {
