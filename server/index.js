@@ -39,9 +39,14 @@ if (isProduction) {
     
     app.use(express.static(clientDistPath))
     
-    app.get('*', (req, res) => {
-        if (!req.path.startsWith('/api') && !req.path.startsWith('/spotify-login') && !req.path.startsWith('/callback')) {
+    app.use((req, res, next) => {
+        if (req.method === 'GET' && 
+            !req.path.startsWith('/api') && 
+            !req.path.startsWith('/spotify-login') && 
+            !req.path.startsWith('/callback')) {
             res.sendFile(path.join(clientDistPath, 'index.html'))
+        } else {
+            next()
         }
     })
 }
