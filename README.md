@@ -53,7 +53,7 @@ Create a `.env` file in the root directory:
 ```bash
 # Supabase
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SECRET_KEY=your-service-role-key
+SUPABASE_SECRET_KEY=your-service-role-key c
 
 # Spotify OAuth
 CLIENT_ID=your-spotify-client-id

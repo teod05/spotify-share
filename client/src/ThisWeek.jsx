@@ -159,7 +159,7 @@ function ThisWeek() {
         </div>
         {weekData?.playlistId && (
           <a
-            href={`https://open.spotify.com/playlist/${weekData.playlistId}`}
+            href={`https://open.spotify.com/playlist/63wGlhpFDoQ8GXdRsySsNN?si=335c2805e2104a7b`}
             target="_blank"
             rel="noopener noreferrer"
             className="playlist-button"
