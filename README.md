@@ -119,4 +119,4 @@ This is a private project for two people, so outside contributions are not expec
 
 ## License
 
-No license has been chosen yet, so all rights are reserved.
+Spotify Share is released under the [MIT License](LICENSE).

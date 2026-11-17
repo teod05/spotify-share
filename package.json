@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Spotify song sharing app",
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
