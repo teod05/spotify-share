@@ -1,145 +1,122 @@
 # Spotify Share
 
-A weekly music sharing app for two people. Each week, both users pick one song and explain why they chose it. On Friday at 18:00 (Berlin time), the songs are automatically added to a shared Spotify playlist.
+With Spotify Share, two people can swap one song a week and say why they picked it. Your partner's pick stays hidden until Friday at 18:00 Berlin time. Then both songs appear in your shared Spotify playlist, each one "added by" the person who chose it.
 
-## Tech Stack
+Spotify Share is a personal project for two users. It is not a multi-user service.
 
-- **Frontend**: React 19 + Vite
-- **Backend**: Express 5 + Node.js
-- **Database**: Supabase (PostgreSQL)
-- **Cron**: node-cron for scheduled drops
-- **OAuth**: Spotify Web API
+## Features
 
-## Setup
+- **One pick a week.** Paste a Spotify track link and write up to 280 characters about why you chose it. You can change your pick until the drop.
+- **Hidden until Friday.** You see that your partner has picked, but not what, until the Friday drop.
+- **Friday drop.** At 18:00 Berlin time, both picks are added to the shared playlist. Each song is added with its owner's Spotify account, so Spotify shows the right "added by" name.
+- **Late picks.** Missed Friday? Until Sunday 23:59 Berlin time, you can still add a pick for the previous week. It goes into the playlist right away.
+- **History.** Browse every past week and see which picks were late.
+
+## Get started locally
+
+This section takes you from a fresh clone to a running app on your computer. Plan for about 30 minutes, most of it spent in the Spotify and Supabase dashboards.
 
 ### Prerequisites
 
-- Node.js 18+
-- Supabase account
-- Spotify Developer account
+- Node.js 18 or later
+- A [Supabase](https://supabase.com) project
+- A [Spotify for Developers](https://developer.spotify.com/dashboard) app
+- A Spotify playlist that both users can add to
 
-### 1. Install Dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
 cd client && npm install && cd ..
 ```
 
-### 2. Set Up Spotify App
+### 2. Set up the Spotify app
 
-1. Go to https://developer.spotify.com/dashboard
-2. Create a new app
-3. Add redirect URI: `http://127.0.0.1:8888/callback`
-4. Copy Client ID and Client Secret
-5. Requested scopes: `playlist-modify-public playlist-modify-private`
+1. Open the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and create an app.
+2. Add this redirect URI: `http://127.0.0.1:8888/callback`
+3. Copy the **Client ID** and **Client secret**.
 
-### 3. Set Up Supabase
+The app requests these scopes when a user connects Spotify: `user-read-private`, `user-read-email`, `playlist-modify-public` and `playlist-modify-private`.
 
-1. Create a Supabase project
-2. Run the schema migrations (users, songs, playlist tables)
-3. Create two users via Supabase Auth
-4. Link users in the `users` table with `auth_id` from Supabase Auth
+### 3. Set up Supabase
 
-### 4. Create Collaborative Spotify Playlist
+Create these tables in your Supabase project. The repo does not include migration files yet, so create them in the Supabase table editor or SQL editor.
 
-1. Create a new playlist in Spotify
-2. Make it collaborative (Edit > Collaborative Playlist)
-3. Copy the playlist ID from the URL (e.g., `3EssRQQTtRgom8M2ggURRr` from `https://open.spotify.com/playlist/3EssRQQTtRgom8M2ggURRr`)
+| Table | Columns the app uses |
+| --- | --- |
+| `users` | `id`, `auth_id` (Supabase Auth user ID), `name`, `email`, `refresh_token`, `playlist_id`, `created_at` |
+| `songs` | `id`, `user_id`, `song_link`, `description`, `created_at`, `posted_at` (null until the song is added to the playlist) |
+| `playlist` | `playlist_id`, `playlist_link` (optional; overrides `SPOTIFY_PLAYLIST_ID`) |
 
-### 5. Configure Environment Variables
+Then create the two users in Supabase Auth and add a matching row for each in `users`, with `auth_id` set to their Auth user ID.
 
-Create a `.env` file in the root directory:
+### 4. Configure environment variables
+
+Copy the example file and fill in your values:
 
 ```bash
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SECRET_KEY=your-service-role-key c
-
-# Spotify OAuth
-CLIENT_ID=your-spotify-client-id
-CLIENT_SECRET=your-spotify-client-secret
-REDIRECT_URI=http://127.0.0.1:8888/callback
-
-# Frontend
-FRONTEND_URL=http://127.0.0.1:5173
-
-# Spotify Playlist
-SPOTIFY_PLAYLIST_ID=your-playlist-id
-
-# Environment
-NODE_ENV=development
+cp server/.env.example server/.env
 ```
 
-See `server/.env.example` for all variables.
+| Variable | Description |
+| --- | --- |
+| `SUPABASE_URL` | Your Supabase project URL. |
+| `SUPABASE_SECRET_KEY` | Your Supabase service role key. Keep it secret. |
+| `CLIENT_ID`, `CLIENT_SECRET` | From your Spotify app. |
+| `REDIRECT_URI` | `http://127.0.0.1:8888/callback` for local use. |
+| `FRONTEND_URL` | `http://127.0.0.1:5173` for local use. |
+| `SPOTIFY_PLAYLIST_ID` | The ID at the end of your playlist URL, for example `3EssRQQTtRgom8M2ggURRr` in `https://open.spotify.com/playlist/3EssRQQTtRgom8M2ggURRr`. |
+| `NODE_ENV` | `development` for local use. |
+| `DROP_SECRET` | Optional locally. Protects the drop endpoint in production. |
+| `ENABLE_CRON` | Set to `true` to run the Friday drop inside the server process. Leave it unset on hosts that sleep. |
 
-### 6. Run the Application
+### 5. Run the app
 
-**Backend (terminal 1):**
+Start the server and the client in two terminals:
+
 ```bash
-npm run dev
-# or
-node --env-file=.env server/index.js
+npm run dev:server
 ```
 
-**Frontend (terminal 2):**
 ```bash
-cd client
-npm run dev
+npm run dev:client
 ```
 
-### 7. Access the App
+### 6. Try it out
 
-⚠️ **Important**: Open the app at http://127.0.0.1:5173 (not `localhost`)
+1. Open http://127.0.0.1:5173. Use `127.0.0.1`, not `localhost`, so the Spotify login cookies match the redirect URI.
+2. Sign in with one of your Supabase users.
+3. Select **Connect Spotify** and approve access.
+4. Paste a Spotify track link, write why you picked it and select **Save pick**.
 
-This is required for Spotify OAuth to work correctly. Spotify redirects to `127.0.0.1:8888/callback`, and cookies need to match the domain.
+You should now see your pick for this week, and a note about whether your partner has picked yet.
 
-## How It Works
+## Run the tests
 
-1. **Login**: Both users sign in with their Supabase credentials
-2. **Connect Spotify**: Each user connects their own Spotify account (OAuth)
-3. **Pick a Song**: Each week, add one Spotify track and explain why you chose it
-4. **Friday Drop**: At 18:00 Berlin time, songs are added to the shared playlist
-   - Each song is added using that user's Spotify token
-   - Shows as "added by" the correct user in Spotify
-5. **History**: View all past weekly picks
-
-## Database Schema
-
-- **users**: User accounts with Spotify refresh tokens
-- **songs**: Song picks with `posted_at` null until Friday drop
-- **playlist**: Shared playlist info (optional, falls back to env var)
-
-## Testing
-
-Run unit tests:
 ```bash
-node server/utils/spotify.test.js
 node server/utils/time.test.js
+node server/utils/drop-guard.test.js
+node --env-file=server/.env server/utils/spotify.test.js
 ```
 
-Build and lint:
-```bash
-cd client
-npm run build
-npm run lint
+The Spotify test needs the env file because it loads the Supabase client.
+
+## Documentation
+
+- [Deployment guide](docs/DEPLOY.md) explains how to host the app on Render's free tier and trigger the Friday drop from Supabase `pg_cron`, because the free server sleeps and cannot keep its own schedule. It also covers wake-up pings, the drop endpoint (`POST /api/drop`) and troubleshooting.
+
+## Project structure
+
+```text
+client/   React front end (Vite)
+server/   Express API, Spotify OAuth and the Friday drop job
+docs/     Deployment and other guides
 ```
 
-## Friday Drop Job
+## Contributing and contact
 
-The cron job runs at `0 18 * * 5` (Friday 18:00 Europe/Berlin).
-
-For each pending song:
-1. Use the song owner's refresh token to get an access token
-2. Add the track to the playlist (shows as added by that user)
-3. Mark the song as `posted_at = now()`
-4. If a user hasn't connected Spotify, their song is skipped and left pending
-
-Manual trigger (for testing):
-```javascript
-import { runDrop } from './server/jobs/friday-drop.js'
-await runDrop()
-```
+This is a private project for two people, so outside contributions are not expected. If you find a bug or have a question, open an issue on GitHub.
 
 ## License
 
-Private project for personal use.
+No license has been chosen yet, so all rights are reserved.
