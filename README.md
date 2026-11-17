@@ -2,6 +2,10 @@
 
 A weekly song swap for two people, delivered to a shared Spotify playlist every Friday.
 
+![The This week page, showing your pick with the reason you chose it and your partner's pick hidden until Friday](docs/images/this-week.png)
+
+*The **This week** page, shown with sample data.*
+
 ## What it does and why it exists
 
 Spotify Share turns sharing music into a small weekly ritual. Each week, you and your partner each pick one song and write a few words about why you chose it. Neither of you can see the other's pick until Friday at 18:00 Berlin time, when both songs appear in your shared playlist at the same time.
@@ -103,7 +107,8 @@ spotify:track:TRACK_ID
 Example pick:
 
 > **Link:** `https://open.spotify.com/track/TRACK_ID`
-> **Why:** This was playing in the cafe where we met. I still think of that afternoon every time I hear it.
+>
+> **Why:** This was playing the first time we went to the lake. I still think of that afternoon every time I hear it.
 
 You can edit your pick at any time before the drop.
 
