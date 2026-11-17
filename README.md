@@ -89,7 +89,7 @@ npm run dev:client
 3. Select **Connect Spotify** and approve access.
 4. Paste a Spotify track link, write why you picked it and select **Save pick**.
 
-You should now see your pick for this week, and a note about whether your partner has picked yet.
+You should now see your pick for this week and a note about whether your partner has picked yet.
 
 ## Run the tests
 
