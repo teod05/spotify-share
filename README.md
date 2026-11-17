@@ -1,16 +1,14 @@
 # Spotify Share
 
-With Spotify Share, two people can swap one song a week and say why they picked it. Your partner's pick stays hidden until Friday at 18:00 Berlin time. Then both songs appear in your shared Spotify playlist, each one "added by" the person who chose it.
+A weekly song swap for two people, delivered to a shared Spotify playlist every Friday.
+
+## What it does and why it exists
+
+Spotify Share turns sharing music into a small weekly ritual. Each week, you and your partner each pick one song and write a few words about why you chose it. Neither of you can see the other's pick until Friday at 18:00 Berlin time, when both songs appear in your shared playlist at the same time.
+
+The point is the reveal and the reason behind each song, not just the song itself. Because each pick is added with its owner's own Spotify account, the playlist also becomes a record of who shared what, week by week.
 
 Spotify Share is a personal project for two users. It is not a multi-user service.
-
-## Features
-
-- **One pick a week.** Paste a Spotify track link and write up to 280 characters about why you chose it. You can change your pick until the drop.
-- **Hidden until Friday.** You see that your partner has picked, but not what, until the Friday drop.
-- **Friday drop.** At 18:00 Berlin time, both picks are added to the shared playlist. Each song is added with its owner's Spotify account, so Spotify shows the right "added by" name.
-- **Late picks.** Missed Friday? Until Sunday 23:59 Berlin time, you can still add a pick for the previous week. It goes into the playlist right away.
-- **History.** Browse every past week and see which picks were late.
 
 ## Get started locally
 
@@ -89,7 +87,41 @@ npm run dev:client
 3. Select **Connect Spotify** and approve access.
 4. Paste a Spotify track link, write why you picked it and select **Save pick**.
 
-You should now see your pick for this week and a note about whether your partner has picked yet.
+You should now see your pick for this week and a note about whether your partner has picked yet. That is your "hello world": the app is running, connected to Spotify and saving picks.
+
+## Usage and features
+
+### Pick a song each week
+
+Paste a Spotify track link and write up to 280 characters about why you chose it. To copy a link in Spotify, open the track menu and select **Share** > **Copy Song Link**. The app accepts both link formats:
+
+```text
+https://open.spotify.com/track/TRACK_ID
+spotify:track:TRACK_ID
+```
+
+Example pick:
+
+> **Link:** `https://open.spotify.com/track/TRACK_ID`
+> **Why:** This was playing in the cafe where we met. I still think of that afternoon every time I hear it.
+
+You can edit your pick at any time before the drop.
+
+### Wait for the reveal
+
+Until the drop, you see that your partner has picked, but not what. The **This week** page shows a countdown to Friday 18:00 Berlin time.
+
+### Friday drop
+
+At 18:00 Berlin time, both picks are added to the shared playlist. Each song is added with its owner's Spotify account, so Spotify shows the right "added by" name. Select **Go to playlist** to open it in Spotify.
+
+### Late picks
+
+Missed Friday? Until Sunday 23:59 Berlin time, you can still add a pick for the previous week. A late pick goes into the playlist right away.
+
+### History
+
+Open **History** to browse every past week, read both reasons and see which picks were late.
 
 ## Run the tests
 
@@ -115,7 +147,9 @@ docs/     Deployment and other guides
 
 ## Contributing and contact
 
-This is a private project for two people, so outside contributions are not expected. If you find a bug or have a question, open an issue on GitHub.
+Spotify Share is built and maintained by Benediktas as a personal project and a CODE University documentation assignment.
+
+This project is built for two people, so outside contributions are not expected. You are welcome to fork it under the MIT License and run your own copy. If you find a bug or have a question, open an issue on GitHub.
 
 ## License
 
