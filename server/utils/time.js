@@ -1,5 +1,9 @@
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
+// The drop happens at 18:00 Berlin time, but servers like Render run in UTC.
+// Each function converts to Berlin wall-clock time, does the date math there
+// and converts back. This keeps the drop at 18:00 local time across the
+// summer and winter clock changes.
 const BERLIN_TZ = 'Europe/Berlin';
 
 export function getNextFridayDrop(referenceDate = new Date()) {
@@ -19,6 +23,10 @@ export function getNextFridayDrop(referenceDate = new Date()) {
     return fromZonedTime(nextFriday, BERLIN_TZ);
 }
 
+// TODO: getWeekRange, getWeekForSong and isLatePick are only used by tests.
+// The routes repeat the same logic inline. Either switch the routes to these
+// helpers or delete them. getWeekRange also uses the server's own time zone
+// and not Berlin time, so fix that first if you keep it.
 export function getWeekRange(dropDate) {
     const monday = new Date(dropDate);
     const mondayDay = dropDate.getDay();
@@ -48,6 +56,8 @@ export function getPreviousFridayDrop(referenceDate = new Date()) {
     return fromZonedTime(previousFriday, BERLIN_TZ);
 }
 
+// Users who miss Friday still get the weekend to add last week's pick. The
+// grace window runs from the Friday drop until Sunday 23:59:59 Berlin time.
 export function isInGraceWindow(date = new Date()) {
     const lastDrop = getPreviousFridayDrop(date);
     const berlinLastDrop = toZonedTime(lastDrop, BERLIN_TZ);

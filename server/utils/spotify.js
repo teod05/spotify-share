@@ -10,13 +10,15 @@ export function parseSpotifyTrackLink(link) {
 
     const trimmed = link.trim()
     
-    // Handle spotify:track:ID format
+    // Spotify can share a track as a URI or as a web URL. We accept both so
+    // users don't have to convert one into the other.
     const uriMatch = trimmed.match(/^spotify:track:([a-zA-Z0-9]+)$/)
     if (uriMatch) {
         return uriMatch[1]
     }
     
-    // Handle https://open.spotify.com/track/ID format (strip query params)
+    // Shared URLs carry tracking parameters such as `?si=`. We keep only the ID
+    // so the same song always gets stored as the same link.
     const urlMatch = trimmed.match(/open\.spotify\.com\/track\/([a-zA-Z0-9]+)/)
     if (urlMatch) {
         return urlMatch[1]
@@ -40,6 +42,8 @@ export async function getTrackMetadata(trackLink) {
             return null
         }
         
+        // The public oEmbed endpoint needs no user token. This lets us show the
+        // title and cover even when the user's Spotify connection has expired.
         const response = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(normalized)}`)
         if (!response.ok) {
             return null
@@ -78,6 +82,8 @@ async function refreshAccessToken(refreshToken) {
     return data.access_token
 }
 
+// Adds the song with the owner's own Spotify account and not a shared app
+// account. That way, the playlist shows who added each song.
 export async function addSongToPlaylist(songId, songLink, userId) {
     const { data: user, error: userError } = await supabase
         .from('users')
@@ -93,6 +99,8 @@ export async function addSongToPlaylist(songId, songLink, userId) {
         throw new Error('User has no Spotify connection')
     }
 
+    // Spotify access tokens expire after one hour and the drop runs once a week.
+    // That's why we store only the refresh token and get a new access token here.
     const accessToken = await refreshAccessToken(user.refresh_token)
 
     let playlistId = process.env.SPOTIFY_PLAYLIST_ID
@@ -139,6 +147,8 @@ export async function addSongToPlaylist(songId, songLink, userId) {
         throw new Error(`Failed to add song to playlist: ${error}`)
     }
 
+    // Warning: the song is already in the playlist at this point. If this update
+    // fails, posted_at stays empty and the next drop adds the song a second time.
     const now = new Date().toISOString()
     const { error: updateError } = await supabase
         .from('songs')

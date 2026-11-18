@@ -16,6 +16,9 @@ router.post("/login", async (req, res) => {
             throw new Error(error.message)
         }
 
+        // We keep the token in an httpOnly cookie and not in localStorage, so
+        // browser JavaScript can't read it. The cookie also has to come along
+        // on the Spotify /callback redirect so we know who just connected.
         res.cookie("access_token", data.session.access_token, {
             httpOnly: true,
             sameSite: "lax",
@@ -47,6 +50,8 @@ router.get("/me", requireAuth, async (req, res) => {
             throw error
         }
 
+        // We read the refresh token in a separate query so it never ends up in
+        // the response object. The client only needs to know if it exists.
         const { data: userWithToken } = await supabase
             .from('users')
             .select('refresh_token')

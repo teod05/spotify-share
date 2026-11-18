@@ -6,7 +6,7 @@ A weekly song swap for two people, delivered to a shared Spotify playlist every 
 
 *The **This week** page, shown with sample data.*
 
-## What it does and why it exists
+## About the project
 
 Spotify Share turns sharing music into a small weekly ritual. Each week, you and your partner each pick one song and write a few words about why you chose it. Neither of you can see the other's pick until Friday at 18:00 Berlin time, when both songs appear in your shared playlist at the same time.
 
@@ -140,6 +140,7 @@ The Spotify test needs the env file because it loads the Supabase client.
 
 ## Documentation
 
+- [Getting started](docs/getting_started.md) is a step-by-step tutorial that takes you from a fresh clone to your first saved pick, with screenshots of each screen.
 - [Deployment guide](docs/DEPLOY.md) explains how to host the app on Render's free tier and trigger the Friday drop from Supabase `pg_cron`, because the free server sleeps and cannot keep its own schedule. It also covers wake-up pings, the drop endpoint (`POST /api/drop`) and troubleshooting.
 
 ## Project structure

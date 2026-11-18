@@ -22,7 +22,8 @@ function ThisWeek() {
         setWeekData(data);
       }
     } catch {
-      // Silently fail
+      // On a network error, the page shows its empty state. The user can
+      // still add a pick, and reloading the page tries again.
     } finally {
       setLoading(false);
     }

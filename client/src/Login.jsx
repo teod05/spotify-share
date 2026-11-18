@@ -20,7 +20,8 @@ function Login({ onLogin }) {
           onLogin(userData);
         }
       } catch {
-        // No session, stay on login page
+        // If we can't reach the server, we can't check the session, so we show
+        // the login form. A missing session gives a 401 and not an exception.
       } finally {
         setCheckingSession(false);
       }

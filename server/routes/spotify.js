@@ -14,6 +14,9 @@ const drop_secret = process.env.DROP_SECRET
 
 const router = express.Router()
 
+// Locally, the client runs on a different port than the server, so
+// FRONTEND_URL is set. In production, Express serves the client itself, so
+// we redirect back to the same host the request came in on.
 function getFrontendUrl(req) {
     if (process.env.FRONTEND_URL) {
         return process.env.FRONTEND_URL
@@ -24,6 +27,9 @@ function getFrontendUrl(req) {
 }
 
 router.get('/spotify-login', requireAuth, function(req, res) {
+    // The random state value protects against cross-site request forgery
+    // (CSRF). /callback only accepts Spotify's answer if the state matches this
+    // cookie, which proves the user started the connection here.
     const state = crypto.randomUUID()
     const scope = 'user-read-private user-read-email playlist-modify-public playlist-modify-private'
 
@@ -50,6 +56,8 @@ router.get("/callback", async (req, res) => {
     const token = req.cookies.access_token
     const frontendUrl = getFrontendUrl(req)
 
+    // Errors go back to the client as query parameters and not as error pages,
+    // because Layout.jsx reads them and shows a message on the Settings page.
     if (error) {
         return res.redirect(`${frontendUrl}/?spotify=error&reason=${encodeURIComponent(error)}`)
     }
@@ -128,6 +136,8 @@ router.get("/api/week", requireAuth, async (req, res) => {
             throw usersError
         }
 
+        // The app is built for exactly two users, so "the partner" is simply the
+        // other row in `users`. A third user would break this.
         const otherUserId = allUsers.find(u => u.id !== currentUser.id)?.id
 
         const { data: yourPick } = await supabase
@@ -139,6 +149,8 @@ router.get("/api/week", requireAuth, async (req, res) => {
             .limit(1)
             .maybeSingle()
 
+        // We select only created_at for the partner's pick. The song and the
+        // reason must stay secret until the drop, so they never leave the server.
         const { data: theirPick } = await supabase
             .from('songs')
             .select('created_at')
@@ -249,6 +261,8 @@ router.post("/api/picks", requireAuth, async (req, res) => {
             throw userError
         }
 
+        // Each user has at most one unposted pick. Saving again replaces it, so
+        // users can change their mind any time before the drop.
         const { data: existingPick } = await supabase
             .from('songs')
             .select('id')
@@ -285,9 +299,12 @@ router.post("/api/picks", requireAuth, async (req, res) => {
                 throw insertError
             }
 
+            // A pick saved during the weekend grace window counts for last week,
+            // so it goes into the playlist right away and doesn't wait for the
+            // next drop. That only happens if the user has no song for last week yet.
             const now = new Date()
             const isGrace = isInGraceWindow(now)
-            
+
             if (isGrace) {
                 const prevDrop = getPreviousFridayDrop(now)
                 
@@ -304,6 +321,8 @@ router.post("/api/picks", requireAuth, async (req, res) => {
                         await addSongToPlaylist(newSong.id, normalizedLink, currentUser.id)
                         console.log(`[Late Pick] Added song ${newSong.id} for user ${currentUser.id}`)
                     } catch (error) {
+                        // We still answer "ok" because the pick itself is saved.
+                        // Its posted_at stays empty, so the next drop adds it.
                         console.error(`[Late Pick] Failed to add song ${newSong.id}:`, error.message)
                     }
                 }
@@ -347,6 +366,8 @@ router.get("/api/history", requireAuth, async (req, res) => {
                 const prevDrop = getPreviousFridayDrop(postedDate)
                 const createdDate = new Date(song.created_at)
                 
+                // A pick is late if someone saved it after the drop it was
+                // posted with. Only grace-window picks fit that description.
                 const isLate = createdDate > prevDrop
                 
                 return {
@@ -394,6 +415,11 @@ router.post("/api/drop", async (req, res) => {
         return res.status(403).json({ error: 'Invalid authorization token' })
     }
     
+    // pg_cron schedules in UTC, so it can't follow Berlin's clock changes on
+    // its own. It calls this endpoint at both 16:00 and 17:00 UTC on Fridays
+    // (see docs/DEPLOY.md), and only the call that lands at 18:00 Berlin time
+    // runs the drop. Allowing the full hour covers a slow wake-up on Render.
+    // Use ?force=true to test the drop at any other time.
     if (!forceRun) {
         const now = new Date()
         const berlin = toZonedTime(now, 'Europe/Berlin')

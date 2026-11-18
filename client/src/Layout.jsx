@@ -18,7 +18,9 @@ function Layout({ user, onLogout }) {
     
     if (!status) return;
     
-    // This is intentional: we set state once based on query param, then clean up
+    // The server's Spotify /callback sends the user back here with
+    // ?spotify=connected or ?spotify=error. We read it once, show a message and
+    // then remove the parameter so a page reload doesn't show it again.
     /* eslint-disable react-hooks/set-state-in-effect */
     if (status === 'connected') {
       setSpotifyMessage({ type: 'success', text: 'Spotify connected successfully!' });

@@ -1,6 +1,9 @@
 import { supabase } from "../db.js";
 import { addSongToPlaylist } from "../utils/spotify.js";
 
+// Adds every song that isn't posted yet, not just this week's picks. A song
+// that failed last week, or a late pick that failed, goes out with the next
+// drop. Running the drop twice is safe because posted songs are skipped.
 export async function runDrop() {
     console.log('[Friday Drop] Starting drop job...')
     
@@ -29,6 +32,8 @@ export async function runDrop() {
         const successfullyAdded = []
         const failed = []
 
+        // Each song gets its own try block. If one user's Spotify connection has
+        // expired, their partner's song still gets added.
         for (const song of pendingSongs) {
             try {
                 const user = song.users
