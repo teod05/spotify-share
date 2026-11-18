@@ -141,6 +141,7 @@ The Spotify test needs the env file because it loads the Supabase client.
 ## Documentation
 
 - [Getting started](docs/getting_started.md) is a step-by-step tutorial that takes you from a fresh clone to your first saved pick, with screenshots of each screen.
+- [About the Friday drop](docs/about_the_friday_drop.md) explains why picks stay hidden until Friday, how the weekly drop and late picks work, and why the database schedules the drop instead of the server.
 - [Deployment guide](docs/DEPLOY.md) explains how to host the app on Render's free tier and trigger the Friday drop from Supabase `pg_cron`, because the free server sleeps and cannot keep its own schedule. It also covers wake-up pings, the drop endpoint (`POST /api/drop`) and troubleshooting.
 
 ## Project structure
