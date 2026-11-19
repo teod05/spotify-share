@@ -44,6 +44,10 @@ Each of you has at most one waiting pick at a time. Saving again replaces it, so
 
 The server never sends your partner's song or reason to the browser before the drop. The **This week** page only learns that your partner has picked and when. This is a deliberate choice: hiding the pick only on screen would still let anyone with browser tools read it.
 
+![The This week page with your pick and its reason on the left and your partner's pick locked on the right](images/this-week.png)
+
+*Before the drop, your partner's pick shows only a lock and the time it was saved.*
+
 ### The drop adds every waiting song
 
 At 18:00 Berlin time, the drop finds every song that isn't in the playlist yet and adds them one by one. Once a song is added, the app saves the time it was posted. That time is how the app tells waiting songs from posted ones.
@@ -61,6 +65,10 @@ The result is that the playlist shows who added each song. Over time, the playli
 Missing a Friday shouldn't mean missing a week. The *grace window* runs from the Friday drop until Sunday 23:59 Berlin time.
 
 If you save a pick in the grace window and you have no song for the past week, the pick counts for that week. The app adds it to the playlist right away, because that week's drop has already happened. In **History**, the pick is marked as late.
+
+![The History page with a late pick from Saturday at the top, marked with a LATE label](images/history.png)
+
+*Sam missed the Friday drop on November 13 and added a late pick on Saturday.*
 
 If you already have a song for the past week, a pick you save in the grace window counts for the coming week and waits for the next drop.
 
